@@ -66,28 +66,43 @@ if %errorlevel% NEQ 0 (
     echo [SUCCESS] Files copied to %TARGET_DIR%. Proceeding... >> %LOG_FILE%
 )
 
-REM === Step 5: Create Background Scheduler Script ===
-echo Creating VBS file for background scheduler... >> %LOG_FILE%
-set VBS_FILE_BG=%TARGET_DIR%\run_bg.vbs
-echo Set objShell = CreateObject("WScript.Shell") > %VBS_FILE_BG%
-echo objShell.Run "%PYTHON_PATH% %TARGET_DIR%\background_schedular.py", 0, False >> %VBS_FILE_BG%
-if exist %VBS_FILE_BG% (
-    echo [SUCCESS] Background scheduler created in %TARGET_DIR%. >> %LOG_FILE%
+REM === Step 5: Create Batch File for Background Scheduler ===
+echo Creating batch file for background scheduler... >> %LOG_FILE%
+set BG_SCHEDULER_BATCH=%TARGET_DIR%\run_bg.bat
+echo @echo off > %BG_SCHEDULER_BATCH%
+echo "%PYTHON_PATH%" "%TARGET_DIR%\background_scheduler.py" >> %BG_SCHEDULER_BATCH%
+
+if exist %BG_SCHEDULER_BATCH% (
+    echo [SUCCESS] Background scheduler batch file created: %BG_SCHEDULER_BATCH%. >> %LOG_FILE%
 ) else (
-    echo [ERROR] Failed to create background scheduler. Exiting setup. >> %LOG_FILE%
+    echo [ERROR] Failed to create batch file for background scheduler. Exiting setup. >> %LOG_FILE%
     pause
     exit /b
 )
 
-REM Add Background Scheduler to Startup Folder
+REM Create VBScript to run batch file silently
+set BG_SILENT_LAUNCHER=%TARGET_DIR%\run_bg_silent.vbs
+echo Set WshShell = CreateObject("WScript.Shell") > %BG_SILENT_LAUNCHER%
+echo WshShell.Run chr(34) ^& "%BG_SCHEDULER_BATCH%" ^& chr(34), 0 >> %BG_SILENT_LAUNCHER%
+echo Set WshShell = Nothing >> %BG_SILENT_LAUNCHER%
+
+if exist %BG_SILENT_LAUNCHER% (
+    echo [SUCCESS] Background scheduler VBScript launcher created: %BG_SILENT_LAUNCHER%. >> %LOG_FILE%
+) else (
+    echo [ERROR] Failed to create VBScript launcher for background scheduler. Exiting setup. >> %LOG_FILE%
+    pause
+    exit /b
+)
+
+REM Add VBScript to Startup Folder Instead of Batch File
 set STARTUP_FOLDER=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup
-copy /Y %VBS_FILE_BG% "%STARTUP_FOLDER%" >> %LOG_FILE%
+copy /Y %BG_SILENT_LAUNCHER% "%STARTUP_FOLDER%" >> %LOG_FILE%
 if %errorlevel% NEQ 0 (
-    echo [ERROR] Failed to copy background scheduler. Exiting setup. >> %LOG_FILE%
+    echo [ERROR] Failed to copy background scheduler VBScript file to Startup folder. Exiting setup. >> %LOG_FILE%
     pause
     exit /b
 ) else (
-    echo [SUCCESS] Background scheduler added to Startup. >> %LOG_FILE%
+    echo [SUCCESS] Background scheduler VBScript file added to Startup folder. >> %LOG_FILE%
 )
 
 REM === Step 6: Create Desktop Shortcut for main.py ===
