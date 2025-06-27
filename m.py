@@ -1,11 +1,10 @@
 import os
 import json
-import shutil
 import subprocess
 from tkinter import *
 from tkinter import filedialog, messagebox
 from datetime import datetime, timedelta
-from threading import Lock  # Added for synchronization
+from threading import Lock
 
 # File to save and load settings
 SETTINGS_FILE = "setting.json"
@@ -50,14 +49,6 @@ def calculate_next_copy_time(interval, hours, minutes):
     else:  # Custom interval
         next_time = today_target if now < today_target else today_target + timedelta(hours=hours, minutes=minutes)
     return next_time
-
-
-def start_background_scheduler():
-    """Start the background scheduler process."""
-    scheduler_script = "background_scheduler.py"
-
-    # Start the scheduler in the background
-    subprocess.Popen(["python", scheduler_script], shell=True)
 
 
 def update_settings_list():
@@ -109,8 +100,7 @@ def save_entry_to_settings():
     update_settings_list()
     messagebox.showinfo("Success", "Entry saved successfully!")
 
-    # Start the background scheduler
-    start_background_scheduler()
+    # No need to manually start the scheduler; it is always running in the background.
 
 
 def delete_entry_from_settings():
